@@ -1,4 +1,4 @@
-package com.naqiran.open.api.validator;
+package com.naqiran.oas.validator;
 
 import io.swagger.v3.oas.models.Operation;
 
@@ -90,7 +90,7 @@ public class Context {
         WARN, ERROR, IGNORED, INFO
     }
 
-    class Message {
+    public class Message {
 
         private String message;
         private MessageLevel level;

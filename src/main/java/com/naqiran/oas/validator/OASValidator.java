@@ -1,4 +1,4 @@
-package com.naqiran.open.api.validator;
+package com.naqiran.oas.validator;
 
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;

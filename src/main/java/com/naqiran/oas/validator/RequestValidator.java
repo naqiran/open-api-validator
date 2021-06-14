@@ -1,4 +1,4 @@
-package com.naqiran.open.api.validator;
+package com.naqiran.oas.validator;
 
 import javax.annotation.Nonnull;
 import java.util.List;
