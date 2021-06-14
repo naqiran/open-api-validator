@@ -58,30 +58,24 @@ public class OASValidator {
         requireNonNull(request, "Http Request should not be null");
         var context = Context.getContext(request);
         var operation = getOperation(context);
-        context.withOperation(operation)
-                .validate(OASValidator::validateSecurity)
-                .validate(c -> RequestValidator.validateRequest(c, "header"))
-                .validate(c -> RequestValidator.validateRequest(c, "query"))
-                .validate(c -> RequestValidator.validateRequest(c, "path"));
-            return context;
-    }
-
-    private static void validateSecurity(final @Nonnull Context context) {
-        final var securityRequirements = context.getOperation().getSecurity();
+        return context.withOperation(operation)
+                .validate(RequestValidator::validate)
+                .getResponseForRequest()
+                .validate(ResponseValidator::validate);
     }
 
     public @Nullable Operation getOperation(final @Nonnull Context context) {
         final var pathItem = Optional.ofNullable(pathMap.get(context.getPath()))
                 .or(() -> {
-                    var e = pathRegexMap.entrySet().stream()
-                            .filter(entry -> entry.getKey().matcher(context.getPath()).matches())
+                    var entry = pathRegexMap.entrySet().stream()
+                            .filter(e -> e.getKey().matcher(context.getPath()).matches())
                             .findFirst()
                             .orElse(null);
-                    if (e != null) {
-                        context.setRegexPath(e.getKey());
-                        return Optional.ofNullable(e.getValue());
+                    if (entry != null) {
+                        context.setRegexPath(entry.getKey());
+                        return Optional.ofNullable(entry.getValue());
                     } else {
-                        return Optional.ofNullable(null);
+                        return Optional.empty();
                     }
                 })
                 .orElse(null);

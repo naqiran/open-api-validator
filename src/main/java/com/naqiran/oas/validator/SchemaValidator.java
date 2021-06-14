@@ -2,33 +2,27 @@ package com.naqiran.oas.validator;
 
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.parameters.Parameter;
+import com.naqiran.oas.validator.Context.MessageLevel;
 
 import java.util.List;
 
 public class SchemaValidator {
 
-    public static void validateParameterSchema(final Context context, final Parameter parameter, final List<String> values) {
-        final var schema = parameter.getSchema();
-        if (Boolean.TRUE.equals(parameter.getRequired()) && values == null) {
-            context.addMessage(Context.MessageLevel.ERROR, "%s: %s is required", parameter.getName(), parameter.getIn());
-        }
-        if (Boolean.TRUE.equals(parameter.getDeprecated())) {
-            context.addMessage(Context.MessageLevel.WARN, "%s: %s is deprecated", parameter.getName(), parameter.getIn());
-        }
+    public static void validateSchema(final Context context, final String attributeName, final Schema<?> schema, final List<String> values) {
         if (schema != null && values != null) {
             if (schema.getType() != null && !values.isEmpty()) {
                 if ("array".equals(schema.getType())) {
-                    ArraySchema aSchema = (ArraySchema) schema;
-                    values.forEach(val -> validateParameterSchema(context, parameter.getName(), aSchema.getItems(), val));
+                    checkMinItems(context, attributeName, schema.getMinLength(), values);
+                    checkMaxItems(context, attributeName, schema.getMaxLength(), values);
+                    values.forEach(val -> validateSchema(context, attributeName, ((ArraySchema) schema).getItems(), val));
                 } else {
-                    validateParameterSchema(context, parameter.getName(), schema, values.get(0));
+                    validateSchema(context, attributeName, schema, values.get(0));
                 }
             }
         }
     }
 
-    public static void validateParameterSchema(final Context context, final String parameterName, final Schema<?> schema, final String value) {
+    public static void validateSchema(final Context context, final String attributeName, final Schema<?> schema, final String value) {
         if (schema != null) {
             var format = schema.getFormat();
             if (schema.getType() != null) {
@@ -51,6 +45,8 @@ public class SchemaValidator {
                             break;
                         case "string":
                             obj = value;
+                            checkMinLength(context, attributeName, schema.getMinLength(), value);
+                            checkMaxLength(context, attributeName, schema.getMaxLength(), value);
                             break;
                         case "boolean":
                             obj = Boolean.valueOf(value);
@@ -59,16 +55,40 @@ public class SchemaValidator {
                             System.out.println("Default");
                     }
                 } catch (Exception e) {
-                    context.addMessage(Context.MessageLevel.ERROR,"Parameter Name: %s | Expected Type: %s", parameterName, schema.getType());
+                    context.addMessage(MessageLevel.ERROR,"Parameter Name: %s | Expected Type: %s", attributeName, schema.getType());
                 }
-                checkEnumValues(context, parameterName, schema, obj);
+                checkEnumValues(context, attributeName, schema, obj);
             }
         }
     }
 
-    public static void checkEnumValues(Context context, String parameterName, Schema<?> schema, Object obj) {
+    public static void checkEnumValues(final Context context, final String attributeName, final Schema<?> schema, final Object obj) {
         if (schema.getEnum() != null && obj != null && !schema.getEnum().contains(obj)) {
-            context.addMessage(Context.MessageLevel.ERROR, "Parameter Name: %s - Allowed Value : %s", parameterName, schema.getEnum().toString());
+            context.addMessage(MessageLevel.ERROR, "Parameter Name: %s - Allowed Value : %s", attributeName, schema.getEnum().toString());
+        }
+    }
+
+    public static void checkMinLength(final Context context, final String attributeName, final Integer length, final String value) {
+        if (length != null && value != null && value.length() < length) {
+            context.addMessage(MessageLevel.ERROR,"Parameter Name: %s less than min-length: %s", attributeName, length.toString());
+        }
+    }
+
+    public static void checkMaxLength(final Context context, final String attributeName, final Integer length, final String value) {
+        if (length != null && value != null && value.length() > length) {
+            context.addMessage(MessageLevel.ERROR,"Parameter Name: %s less than max-length: %s", attributeName, length.toString());
+        }
+    }
+
+    public static void checkMinItems(final Context context, final String attributeName, final Integer length, final List<String> value) {
+        if (length != null && value != null && value.size() < length) {
+            context.addMessage(MessageLevel.ERROR,"Parameter Name: %s less than min-items: %s", attributeName, length.toString());
+        }
+    }
+
+    public static void checkMaxItems(final Context context, final String parameterName, final Integer length, final List<String> value) {
+        if (length != null && value != null && value.size() > length) {
+            context.addMessage(MessageLevel.ERROR,"Parameter Name: %s less than max-items: %s", parameterName, length.toString());
         }
     }
 }

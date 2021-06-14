@@ -3,13 +3,20 @@ package com.naqiran.oas.validator;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.util.*;
-import java.util.regex.MatchResult;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ValidatorUtils {
+public class HttpUtils {
 
     public static @Nonnull String getUrl(final @Nonnull HttpRequest request) {
         return Optional.ofNullable(request.uri().getQuery())
@@ -20,8 +27,8 @@ public class ValidatorUtils {
     public static @Nonnull Map<String, List<String>> getQueryParameters(final @Nonnull HttpRequest request) {
         var queries = request.uri().getQuery();
         if (StringUtils.isNotBlank(queries)) {
-            Map<String, List<String>> parameters = new HashMap<>();
-            for (final var queryArray :queries.split("&")) {
+            final Map<String, List<String>> parameters = new HashMap<>();
+            for (final var queryArray : queries.split("&")) {
                 var kv = queryArray.split("=");
                 final List<String> values = parameters.getOrDefault(kv[0], new ArrayList<>());
                 if (kv.length < 2) {
@@ -38,19 +45,20 @@ public class ValidatorUtils {
     }
 
     public static @Nonnull Map<String, List<String>> getPathParameters(final @Nonnull Context context) {
-        final String path = context.getPath();
-        final Pattern pattern = context.getRegexPath();
+        final var pattern = context.getRegexPath();
         if (pattern != null) {
-            List<String> names = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(pattern.pattern()).results().map(m -> m.group(1)).collect(Collectors.toList());
-            System.out.println("*****" + names);
-            Map<String, List<String>> pathMap = new HashMap<>();
+            final var pathName = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(pattern.pattern()).results().map(m -> m.group(1)).collect(Collectors.toList());
+            final Map<String, List<String>> pathMap = new HashMap<>();
             int index = 0;
-            List<MatchResult> results = pattern.matcher(path).results().collect(Collectors.toList());
-            for (var result: results) {
-                pathMap.put(names.get(index++), List.of(result.group(1)));
+            for (var result: pattern.matcher(context.getPath()).results().collect(Collectors.toList())) {
+                pathMap.put(pathName.get(index++), List.of(result.group(1)));
             }
             return pathMap;
         }
         return Map.of();
+    }
+
+    public static @Nonnull HttpResponse<String> getResponse(final @Nonnull HttpRequest request) throws IOException, InterruptedException {
+        return HttpClient.newBuilder().build().send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

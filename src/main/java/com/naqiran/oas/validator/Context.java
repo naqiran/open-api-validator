@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.Operation;
 
 import javax.annotation.Nonnull;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -11,28 +12,24 @@ import java.util.regex.Pattern;
 
 public class Context {
 
-    private HttpRequest request;
-    private String path;
+    private final HttpRequest request;
+    private final List<Message> messages;
+    private final String path;
     private Pattern regexPath;
-    private List<Message> messages;
     private Operation operation;
-
+    private HttpResponse<String> response;
 
     private Context(final @Nonnull HttpRequest request) {
         this.request = request;
+        this.path = HttpUtils.getUrl(request);
         this.messages = new ArrayList<>();
     }
 
-    public static Context getContext(final HttpRequest request) {
-        return new Context(request).withPath(ValidatorUtils.getUrl(request));
+    public static Context getContext(final @Nonnull HttpRequest request) {
+        return new Context(request);
     }
 
-    private Context withPath(final String path) {
-        this.path = path;
-        return this;
-    }
-
-    public void setRegexPath(final Pattern regexPath) {
+    public void setRegexPath(final @Nonnull Pattern regexPath) {
         this.regexPath = regexPath;
     }
 
@@ -62,8 +59,13 @@ public class Context {
         return this;
     }
 
-    private void addMessages(final @Nonnull List<Message> messages) {
-        this.messages.addAll(messages);
+    public Context getResponseForRequest() {
+        try {
+            response = HttpUtils.getResponse(request);
+        } catch (Exception e) {
+            addMessage(MessageLevel.ERROR, "Error Occurred requesting API : %s", e.getMessage());
+        }
+        return this;
     }
 
     public List<Message> getMessages() {
@@ -78,6 +80,10 @@ public class Context {
         return request;
     }
 
+    public HttpResponse<String> getResponse() {
+        return response;
+    }
+
     public Pattern getRegexPath() {
         return regexPath;
     }
@@ -85,6 +91,8 @@ public class Context {
     public String getPath() {
         return path;
     }
+
+
 
     public enum MessageLevel {
         WARN, ERROR, IGNORED, INFO
