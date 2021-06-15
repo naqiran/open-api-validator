@@ -3,6 +3,7 @@ package com.naqiran.oas.validator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.entity.ContentType;
 
 import javax.annotation.Nonnull;
 
@@ -30,7 +31,7 @@ public class ResponseValidator {
             try {
                 final var apiResponse = context.getOperation().getResponses().get(String.valueOf(context.getResponse().statusCode()));
                 if (apiResponse != null && apiResponse.getContent() != null) {
-                    var mediaType = apiResponse.getContent().get("application/json");
+                    var mediaType = apiResponse.getContent().get(ContentType.APPLICATION_JSON.toString());
                     if (mediaType != null) {
                         SchemaValidator.validateJsonSchema(context, "root", context.getSchema(mediaType.getSchema()), new ObjectMapper().readTree(context.getResponse().body()));
                     }

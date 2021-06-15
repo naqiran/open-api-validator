@@ -6,12 +6,13 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import com.naqiran.oas.validator.Context.MessageLevel;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
 public class SchemaValidator {
 
-    public static void validateJsonSchema(final Context context, final String path, final Schema<?> schema, final JsonNode node) {
+    public static void validateJsonSchema(final @Nonnull Context context, final @Nonnull String path, final Schema<?> schema, final JsonNode node) {
         if (schema != null && node != null) {
             switch (schema.getType()) {
                 case "array":
@@ -46,7 +47,7 @@ public class SchemaValidator {
         }
     }
 
-    public static void validateJsonArray(final Context context, final String path, final ArraySchema schema, final JsonNode node) {
+    public static void validateJsonArray(final @Nonnull Context context, final @Nonnull String path, final ArraySchema schema, final JsonNode node) {
         if (node.isArray()) {
             if (schema.getMinLength() != null && !node.has(schema.getMinLength())) {
                 context.addMessage(MessageLevel.ERROR,"Parameter Name: %s less than min-items: %s", path, schema.getMinLength().toString());
@@ -60,7 +61,7 @@ public class SchemaValidator {
         }
     }
 
-    public static void validateJsonObject(final Context context, final String path, final ObjectSchema schema, final JsonNode node) {
+    public static void validateJsonObject(final @Nonnull Context context, final @Nonnull String path, final ObjectSchema schema, final JsonNode node) {
         if (node.isObject()) {
             Map<String, Schema> map = schema.getProperties();
             for (Map.Entry<String, Schema> entry : map.entrySet()) {

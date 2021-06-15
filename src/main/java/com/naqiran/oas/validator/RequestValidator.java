@@ -6,6 +6,7 @@ import com.naqiran.oas.validator.utils.HttpUtils;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.entity.ContentType;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -24,9 +25,12 @@ public class RequestValidator {
 
     public static void validateRequestBody(final @Nonnull Context context) {
         if (context.getOperation().getRequestBody() != null) {
+            final RequestBody body = context.getOperation().getRequestBody();
+            if (body.getRequired() && StringUtils.isBlank(context.getRequest().getBody())) {
+                context.addMessage(Context.MessageLevel.ERROR,"Request Body is required for %s : %s", context.getRequest().getMethod(), context.getPath());
+            }
             try {
-                final RequestBody body = context.getOperation().getRequestBody();
-                final var type = body.getContent().get("application/json");
+                final var type = body.getContent().get(ContentType.APPLICATION_JSON.toString());
                 if (type != null) {
                     SchemaValidator.validateJsonSchema(context, "root", context.getSchema(type.getSchema()), new ObjectMapper().readTree(context.getRequest().getBody()));
                 }

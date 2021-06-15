@@ -3,8 +3,8 @@ package com.naqiran.oas.validator.cli;
 import com.naqiran.oas.validator.OASValidator;
 import com.naqiran.oas.validator.Request;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.http.HttpHeaders;
+import org.apache.http.entity.ContentType;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
@@ -20,8 +20,6 @@ import static picocli.CommandLine.Parameters;
 
 @Command(name = "oas-validator")
 public class OASValidatorCommand implements Callable<String> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OASValidatorCommand.class);
 
     @Parameters(description = "API Endpoint URL")
     private URI uri;
@@ -61,8 +59,8 @@ public class OASValidatorCommand implements Callable<String> {
     @Nonnull
     private Map<String, List<String>> getHeaders() {
         final Map<String, List<String>> headerMap = new HashMap<>();
-        headerMap.put("Content-Type", List.of("application/json"));
-        headerMap.put("Accept", List.of("application/json"));
+        headerMap.put(HttpHeaders.CONTENT_TYPE, List.of(ContentType.APPLICATION_JSON.toString()));
+        headerMap.put(HttpHeaders.ACCEPT, List.of(ContentType.APPLICATION_JSON.toString()));
         if (headers != null) {
             for (final var header: headers) {
                 final var headerKv = StringUtils.removeEnd(StringUtils.removeStart(header, "'"), "'").split(":");
