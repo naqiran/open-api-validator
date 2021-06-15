@@ -2,17 +2,13 @@ package com.naqiran.oas.validator;
 
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.parser.core.models.ParseOptions;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.net.http.HttpRequest;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
@@ -24,6 +20,7 @@ public class OASValidator {
     private final Map<String, PathItem> pathMap;
 
     private final Pattern pathPattern = Pattern.compile("\\{(.*)}");
+
 
     private OASValidator(final @Nonnull OpenAPI schema) {
         this.schema = schema;
@@ -54,32 +51,28 @@ public class OASValidator {
         return new Builder();
     }
 
-    public @Nonnull Context validate(final @Nonnull HttpRequest request) {
+    public @Nonnull Context validate(final @Nonnull Request request) {
         requireNonNull(request, "Http Request should not be null");
         var context = Context.getContext(request);
-        var operation = getOperation(context);
-        return context.withOperation(operation)
+        return context.withOperation(this::operation)
+                .withComponents(schema.getComponents())
                 .validate(RequestValidator::validate)
                 .getResponseForRequest()
                 .validate(ResponseValidator::validate);
     }
 
-    public @Nullable Operation getOperation(final @Nonnull Context context) {
-        final var pathItem = Optional.ofNullable(pathMap.get(context.getPath()))
-                .or(() -> {
-                    var entry = pathRegexMap.entrySet().stream()
-                            .filter(e -> e.getKey().matcher(context.getPath()).matches())
-                            .findFirst()
-                            .orElse(null);
-                    if (entry != null) {
-                        context.setRegexPath(entry.getKey());
-                        return Optional.ofNullable(entry.getValue());
-                    } else {
-                        return Optional.empty();
-                    }
-                })
-                .orElse(null);
-        return pathItem != null ? pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(context.getRequest().method())) : null;
+    public Context operation(final @Nonnull Context context) {
+        var pathItem = pathMap.get(context.getPath());
+        for (var entry: pathRegexMap.entrySet()) {
+            if (entry.getKey().matcher(context.getPath()).matches()) {
+                pathItem = entry.getValue();
+                context.setRegexPath(entry.getKey());
+            }
+        }
+        if (pathItem != null) {
+            context.setOperation(pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(context.getRequest().getMethod())));
+        }
+        return context;
     }
 
     public static class Builder {

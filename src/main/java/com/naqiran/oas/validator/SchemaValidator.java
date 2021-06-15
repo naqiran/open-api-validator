@@ -1,5 +1,6 @@
 package com.naqiran.oas.validator;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import com.naqiran.oas.validator.Context.MessageLevel;
@@ -7,6 +8,18 @@ import com.naqiran.oas.validator.Context.MessageLevel;
 import java.util.List;
 
 public class SchemaValidator {
+
+    public static void validateSchema(final Context context, final Schema<?> schema, final JsonNode value) {
+        if (schema != null && value != null) {
+            if (schema.getType() != null) {
+                if ("array".equals(schema.getType())) {
+                    //values.forEach(val -> validateSchema(context, attributeName, ((ArraySchema) schema).getItems(), val));
+                } else {
+                    //validateSchema(context, attributeName, schema, values.get(0));
+                }
+            }
+        }
+    }
 
     public static void validateSchema(final Context context, final String attributeName, final Schema<?> schema, final List<String> values) {
         if (schema != null && values != null) {

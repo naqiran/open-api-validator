@@ -15,7 +15,7 @@ public class ResponseValidator {
 
     public static void validateHeader(final @Nonnull Context context) {
         if (context.getOperation().getResponses() != null) {
-            var apiResponse = context.getOperation().getResponses().get(context.getResponse().statusCode());
+            var apiResponse = context.getOperation().getResponses().get(String.valueOf(context.getResponse().statusCode()));
             if (apiResponse != null && apiResponse.getHeaders() != null) {
                 var responseHeaders = context.getResponse().headers().map();
                 apiResponse.getHeaders().forEach((name, header) -> SchemaValidator.validateSchema(context, name, header.getSchema(), responseHeaders.get(name)));

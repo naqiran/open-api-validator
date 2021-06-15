@@ -1,6 +1,7 @@
-package com.naqiran.oas.validator.command;
+package com.naqiran.oas.validator.cli;
 
 import com.naqiran.oas.validator.OASValidator;
+import com.naqiran.oas.validator.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +9,6 @@ import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 import java.net.URI;
-import java.net.http.HttpRequest;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,14 +52,8 @@ public class OASValidatorCommand implements Callable<String> {
 
     @Override
     public String call() {
-        var builder = HttpRequest.newBuilder()
-                .timeout(Duration.ofSeconds(connectionTimeout))
-                .uri(uri)
-                .method(method, HttpRequest.BodyPublishers.ofString(requestBody));
-        for (var entry : getHeaders().entrySet()) {
-            builder.headers(entry.getKey(), entry.getValue().get(0));
-        }
-        var messages = OASValidator.builder().withSchema(schema).build().validate(builder.build());
+        var request = Request.builder(uri, method).withHeader(getHeaders()).withBody(requestBody);
+        var messages = OASValidator.builder().withSchema(schema).build().validate(request);
         messages.getMessages().forEach(System.out::println);
         return "success";
     }
@@ -80,7 +73,7 @@ public class OASValidatorCommand implements Callable<String> {
     }
 
     public static void main(final String[] args) {
-        String[] args1 = {"--schema=https://petstore3.swagger.io/api/v3/openapi.json", "https://petstore3.swagger.io/api/v3/store/order/1234", "--method=GET"};
+        String[] args1 = {"--schema=https://petstore3.swagger.io/api/v3/openapi.json", "https://petstore3.swagger.io/api/v3/pet", "--method=POST", "--data={\"id\":10,\"name\":\"doggie\",\"category\":{\"id\":1,\"name\":\"Dogs\"},\"photoUrls\":[\"string\"],\"tags\":[{\"id\":0,\"name\":\"string\"}],\"status\":\"available\"}"};
         System.exit(new CommandLine(OASValidatorCommand.class).execute(args1));
     }
 }

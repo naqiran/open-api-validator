@@ -1,31 +1,34 @@
 package com.naqiran.oas.validator;
 
+import com.naqiran.oas.validator.utils.HttpUtils;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.Operation;
 
 import javax.annotation.Nonnull;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class Context {
 
-    private final HttpRequest request;
+    private final Request request;
     private final List<Message> messages;
     private final String path;
     private Pattern regexPath;
     private Operation operation;
     private HttpResponse<String> response;
+    private Components components;
 
-    private Context(final @Nonnull HttpRequest request) {
+    private Context(final @Nonnull Request request) {
         this.request = request;
         this.path = HttpUtils.getUrl(request);
         this.messages = new ArrayList<>();
     }
 
-    public static Context getContext(final @Nonnull HttpRequest request) {
+    public static Context getContext(final @Nonnull Request request) {
         return new Context(request);
     }
 
@@ -33,18 +36,27 @@ public class Context {
         this.regexPath = regexPath;
     }
 
-    public final Context withOperation(final Operation operation) {
+    public final Context setOperation(final Operation operation) {
         if (operation == null) {
             addMessage(MessageLevel.ERROR, "Operation not defined for the path: %s", path);
         } else {
             addMessage(MessageLevel.INFO, "API is validated against the Operation: %s", operation.getOperationId());
             this.operation = operation;
             if (Boolean.TRUE.equals(operation.getDeprecated())) {
-                addMessage(MessageLevel.WARN, "API is deprecated %s", request.uri().getPath());
+                addMessage(MessageLevel.WARN, "API is deprecated %s", request.getUri().getPath());
             }
 
         }
         return this;
+    }
+
+    public Context withComponents(final Components components) {
+        this.components = components;
+        return this;
+    }
+
+    public Context withOperation(final Function<Context,Context> operationFunction) {
+        return operationFunction.apply(this);
     }
 
     public final Context addMessage(final @Nonnull MessageLevel level, final @Nonnull String message, final String... args) {
@@ -76,7 +88,7 @@ public class Context {
         return operation;
     }
 
-    public HttpRequest getRequest() {
+    public Request getRequest() {
         return request;
     }
 
@@ -92,16 +104,17 @@ public class Context {
         return path;
     }
 
-
+    public Components getComponents() {
+        return components;
+    }
 
     public enum MessageLevel {
         WARN, ERROR, IGNORED, INFO
     }
 
-    public class Message {
-
-        private String message;
-        private MessageLevel level;
+    public static class Message {
+        private final String message;
+        private final MessageLevel level;
 
         public Message(final @Nonnull String message, final @Nonnull MessageLevel level) {
             this.message = message;

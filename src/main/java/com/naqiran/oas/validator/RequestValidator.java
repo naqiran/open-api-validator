@@ -1,6 +1,14 @@
 package com.naqiran.oas.validator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.naqiran.oas.validator.utils.HttpUtils;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -14,6 +22,28 @@ public class RequestValidator {
         validateParameter(context, "query");
         validateParameter(context, "path");
         validateParameter(context, "cookie");
+        validateRequestBody(context);
+    }
+
+    public static void validateRequestBody(final @Nonnull Context context) {
+        if (StringUtils.isNotBlank(context.getRequest().getBody())) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                RequestBody body = context.getOperation().getRequestBody();
+                MediaType type = body.getContent().get("application/json");
+                var reference = type.getSchema().get$ref();
+                if (reference != null) {
+                    String schemaName = reference.replace("#/components/schemas/", "");
+                    Schema<?> schema = context.getComponents().getSchemas().get(schemaName);
+                    System.out.println(schema);
+                    JsonNode node = mapper.readTree(context.getRequest().getBody());
+                    SchemaValidator.validateSchema(context, schema, node);
+                }
+
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void validateParameter(final @Nonnull Context context, final @Nonnull String type) {
@@ -38,7 +68,7 @@ public class RequestValidator {
         var request = context.getRequest();
         switch (type) {
             case "header":
-                return request.headers().map();
+                return request.getHeaders();
             case "query":
                 return HttpUtils.getQueryParameters(request);
             case "path":
