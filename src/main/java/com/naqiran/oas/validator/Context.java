@@ -3,6 +3,7 @@ package com.naqiran.oas.validator;
 import com.naqiran.oas.validator.utils.HttpUtils;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.Schema;
 
 import javax.annotation.Nonnull;
 import java.net.http.HttpResponse;
@@ -78,6 +79,24 @@ public class Context {
             addMessage(MessageLevel.ERROR, "Error Occurred requesting API : %s", e.getMessage());
         }
         return this;
+    }
+
+    public Schema getSchema(Schema schema) {
+        if (schema.getType() != null) {
+            return schema;
+        } else {
+            String reference = schema.get$ref();
+            if (reference != null) {
+                String schemaName = reference.replace("#/components/schemas/", "");
+                Schema referenceSchema = components.getSchemas().get(schemaName);
+                if (referenceSchema == null) {
+                    throw new ValidationException("Reference schema is missing: " + schemaName);
+                }
+                return referenceSchema;
+            } else {
+                throw new ValidationException("Reference or type shoule be present");
+            }
+        }
     }
 
     public List<Message> getMessages() {

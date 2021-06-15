@@ -1,11 +1,8 @@
 package com.naqiran.oas.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.naqiran.oas.validator.utils.HttpUtils;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import org.apache.commons.lang3.StringUtils;
@@ -28,20 +25,13 @@ public class RequestValidator {
     public static void validateRequestBody(final @Nonnull Context context) {
         if (StringUtils.isNotBlank(context.getRequest().getBody())) {
             try {
-                ObjectMapper mapper = new ObjectMapper();
-                RequestBody body = context.getOperation().getRequestBody();
-                MediaType type = body.getContent().get("application/json");
-                var reference = type.getSchema().get$ref();
-                if (reference != null) {
-                    String schemaName = reference.replace("#/components/schemas/", "");
-                    Schema<?> schema = context.getComponents().getSchemas().get(schemaName);
-                    System.out.println(schema);
-                    JsonNode node = mapper.readTree(context.getRequest().getBody());
-                    SchemaValidator.validateSchema(context, schema, node);
+                final RequestBody body = context.getOperation().getRequestBody();
+                final var type = body.getContent().get("application/json");
+                if (type != null) {
+                    SchemaValidator.validateJsonSchema(context, "root", context.getSchema(type.getSchema()), new ObjectMapper().readTree(context.getRequest().getBody()));
                 }
-
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+            } catch (final JsonProcessingException ex) {
+                context.addMessage(Context.MessageLevel.ERROR,"Not a valid JSON Object: %s", ex.getMessage());
             }
         }
     }
@@ -61,7 +51,7 @@ public class RequestValidator {
         if (Boolean.TRUE.equals(parameter.getDeprecated())) {
             context.addMessage(Context.MessageLevel.WARN, "%s: %s is deprecated", parameter.getName(), parameter.getIn());
         }
-        SchemaValidator.validateSchema(context, parameter.getName(), parameter.getSchema(), values);
+        SchemaValidator.validateParameterSchema(context, parameter.getName(), parameter.getSchema(), values);
     }
 
     public static Map<String, List<String>> getValues(final Context context, @Nonnull String type) {
