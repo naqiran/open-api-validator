@@ -73,7 +73,6 @@ public class OASValidatorCommand implements Callable<String> {
     }
 
     public static void main(final String[] args) {
-        String[] args1 = {"--schema=https://petstore3.swagger.io/api/v3/openapi.json", "https://petstore3.swagger.io/api/v3/pet", "--method=POST", "--data={\"id\":10,\"name\":\"doggie\",\"category\":{\"id\":1,\"name\":\"Dogs\"},\"photoUrls\":[\"string\"],\"tags\":[{\"id\":0,\"name\":\"string\"}],\"status\":\"available\"}"};
-        System.exit(new CommandLine(OASValidatorCommand.class).execute(args1));
+        System.exit(new CommandLine(OASValidatorCommand.class).execute(args));
     }
 }

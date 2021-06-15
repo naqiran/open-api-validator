@@ -29,9 +29,13 @@ public class ResponseValidator {
         if (StringUtils.isNotBlank(context.getResponse().body())) {
             try {
                 final var apiResponse = context.getOperation().getResponses().get(String.valueOf(context.getResponse().statusCode()));
-                var mediaType = apiResponse.getContent().get("application/json");
-                if (mediaType != null) {
-                    SchemaValidator.validateJsonSchema(context, "root", context.getSchema(mediaType.getSchema()), new ObjectMapper().readTree(context.getResponse().body()));
+                if (apiResponse != null && apiResponse.getContent() != null) {
+                    var mediaType = apiResponse.getContent().get("application/json");
+                    if (mediaType != null) {
+                        SchemaValidator.validateJsonSchema(context, "root", context.getSchema(mediaType.getSchema()), new ObjectMapper().readTree(context.getResponse().body()));
+                    }
+                } else {
+                    context.addMessage(Context.MessageLevel.WARN, "No Response schema defined for status code : %s", String.valueOf(context.getResponse().statusCode()));
                 }
             } catch (final JsonProcessingException ex) {
                 context.addMessage(Context.MessageLevel.ERROR,"Not a valid JSON Object: %s", ex.getMessage());

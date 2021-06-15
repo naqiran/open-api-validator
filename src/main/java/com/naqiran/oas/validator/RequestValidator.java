@@ -23,7 +23,7 @@ public class RequestValidator {
     }
 
     public static void validateRequestBody(final @Nonnull Context context) {
-        if (StringUtils.isNotBlank(context.getRequest().getBody())) {
+        if (context.getOperation().getRequestBody() != null) {
             try {
                 final RequestBody body = context.getOperation().getRequestBody();
                 final var type = body.getContent().get("application/json");
