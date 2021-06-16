@@ -60,6 +60,11 @@ public class Context {
         return operationFunction.apply(this);
     }
 
+    public final Context addMessage(final @Nonnull MessageLevel level, final boolean ignoreError, final @Nonnull String message, final String... args) {
+        messages.add(new Message(String.format(message, (Object[]) args), ignoreError ? MessageLevel.IGNORED : level));
+        return this;
+    }
+
     public final Context addMessage(final @Nonnull MessageLevel level, final @Nonnull String message, final String... args) {
         messages.add(new Message(String.format(message, (Object[]) args), level));
         return this;
@@ -82,20 +87,25 @@ public class Context {
     }
 
     public Schema getSchema(Schema schema) {
-        if (schema.getType() != null) {
-            return schema;
-        } else {
-            String reference = schema.get$ref();
-            if (reference != null) {
-                String schemaName = reference.replace("#/components/schemas/", "");
-                Schema referenceSchema = components.getSchemas().get(schemaName);
-                if (referenceSchema == null) {
-                    throw new ValidationException("Reference schema is missing: " + schemaName);
-                }
-                return referenceSchema;
+        if (schema != null) {
+            if (schema.getType() != null) {
+                return schema;
             } else {
-                throw new ValidationException("Reference or type shoule be present");
+                schema.getType().equals("object");
+                if (schema.get$ref() != null) {
+                    var referenceSchema = components.getSchemas()
+                        .get(schema.get$ref().replace("#/components/schemas/", ""));
+                    if (referenceSchema == null) {
+                        throw new ValidationException(
+                            "Reference schema is missing: " + schema.get$ref());
+                    }
+                    return referenceSchema;
+                } else {
+                    throw new ValidationException("Reference or type should be present");
+                }
             }
+        } else {
+            throw new ValidationException("Empty schema");
         }
     }
 

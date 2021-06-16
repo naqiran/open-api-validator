@@ -33,7 +33,7 @@ public class ResponseValidator {
                 if (apiResponse != null && apiResponse.getContent() != null) {
                     var mediaType = apiResponse.getContent().get(ContentType.APPLICATION_JSON.toString());
                     if (mediaType != null) {
-                        SchemaValidator.validateJsonSchema(context, "root", context.getSchema(mediaType.getSchema()), new ObjectMapper().readTree(context.getResponse().body()));
+                        SchemaValidator.validateJsonSchema(context, "root", mediaType.getSchema(), new ObjectMapper().readTree(context.getResponse().body()));
                     }
                 } else {
                     context.addMessage(Context.MessageLevel.WARN, "No Response schema defined for status code : %s", String.valueOf(context.getResponse().statusCode()));

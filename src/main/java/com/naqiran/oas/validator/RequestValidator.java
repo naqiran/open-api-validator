@@ -32,7 +32,7 @@ public class RequestValidator {
             try {
                 final var type = body.getContent().get(ContentType.APPLICATION_JSON.toString());
                 if (type != null) {
-                    SchemaValidator.validateJsonSchema(context, "root", context.getSchema(type.getSchema()), new ObjectMapper().readTree(context.getRequest().getBody()));
+                    SchemaValidator.validateJsonSchema(context, "root", type.getSchema(), new ObjectMapper().readTree(context.getRequest().getBody()));
                 }
             } catch (final JsonProcessingException ex) {
                 context.addMessage(Context.MessageLevel.ERROR,"Not a valid JSON Object: %s", ex.getMessage());
